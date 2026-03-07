@@ -13,6 +13,7 @@
     <h2>Wpisz swoją liczbę</h2>
     
     <input type="number" step="any" id="liczbaInput" placeholder="np. 42" style="padding: 8px;">
+    <input type="char" placeholder="Uzytkowik" style="padding: 38px;">
     <button onclick="zapiszDoBazy()" style="padding: 8px 16px;">Zapisz</button>
     
     <p id="status"></p>
@@ -34,7 +35,7 @@
       const input = document.getElementById('liczbaInput');
       const statusText = document.getElementById('status');
       
-      const wpisanaLiczba = parseFloat(input.value);
+      const wpisanaLiczba = parseFloat(input.value.replace(',', '.'));
       console.log("Wpisana liczba to:", wpisanaLiczba);
 
       if (isNaN(wpisanaLiczba)) {
