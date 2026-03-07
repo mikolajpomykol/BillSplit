@@ -19,53 +19,62 @@
   </div>
 
   <script>
-    // 2. Inicjalizacja Supabase - wklej swoje publiczne klucze poniżej
+    console.log("1. Ładowanie skryptu rozpoczęte.");
+
     const supabaseUrl = 'https://eabprmsyvgznqaxtahdr.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhYnBybXN5dmd6bnFheHRhaGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0ODA3NjQsImV4cCI6MjA4ODA1Njc2NH0.63M5d6ETIjfBlaB02-qf-kTzqjLq4JKCcW_rIdSoMww';
     
-    // Tworzymy klienta Supabase
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    // Zmieniliśmy nazwę zmiennej na supabaseClient, by unikać konfliktów!
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    console.log("2. Supabase poprawnie zainicjalizowany.");
 
-    // 3. Funkcja wysyłająca dane po kliknięciu przycisku
     async function zapiszDoBazy() {
+      console.log("3. Kliknięto przycisk Zapisz.");
+      
       const input = document.getElementById('liczbaInput');
       const statusText = document.getElementById('status');
       
-      // Pobieramy wartość z pola i zamieniamy na liczbę całkowitą
       const wpisanaLiczba = parseInt(input.value);
+      console.log("Wpisana liczba to:", wpisanaLiczba);
 
-      // Zabezpieczenie, jeśli ktoś nie wpisze liczby
       if (isNaN(wpisanaLiczba)) {
         statusText.innerText = "Proszę wpisać poprawną liczbę!";
         statusText.style.color = "red";
+        console.log("Przerwano: Wartość nie jest liczbą.");
         return;
       }
 
       statusText.innerText = "Wysyłanie...";
       statusText.style.color = "black";
 
-      // Wysyłamy dane do tabeli (upewnij się, że Twoja tabela nazywa się 'user_numbers', 
-      // a kolumna 'number_value')
+      const SupaTable = 'expenses';
+      const SupaColumn = 'ExpenseValue';
 
-      const SupaTable = 'expenses'
-      const SupaColumn = 'ExpenseValue'
+      try {
+        console.log(`4. Próba wysłania danych do tabeli "${SupaTable}"...`);
+        
+        // Zauważ nawiasy kwadratowe wokół [SupaColumn]
+        const { data, error } = await supabaseClient
+          .from(SupaTable)
+          .insert([
+            { [SupaColumn]: wpisanaLiczba }
+          ]);
 
-
-      const { data, error } = await supabase
-        .from(SupaTable)
-        .insert([
-          { ExpenseValue: wpisanaLiczba }
-        ]);
-
-      // Sprawdzamy, czy wystąpił błąd (np. zablokowany dostęp RLS)
-      if (error) {
-        console.error('Błąd Supabase:', error);
-        statusText.innerText = "Wystąpił błąd: " + error.message;
+        if (error) {
+          console.error('5. Błąd Supabase:', error);
+          statusText.innerText = "Wystąpił błąd bazy: " + error.message;
+          statusText.style.color = "red";
+        } else {
+          console.log('5. Sukces! Odpowiedź bazy:', data);
+          statusText.innerText = "Udało się! Liczba " + wpisanaLiczba + " zapisana.";
+          statusText.style.color = "green";
+          input.value = ''; 
+        }
+      } catch (e) {
+        // Ten blok wychwyci inne, krytyczne błędy skryptu
+        console.error('Krytyczny błąd działania funkcji:', e);
+        statusText.innerText = "Krytyczny błąd! Sprawdź konsolę (F12).";
         statusText.style.color = "red";
-      } else {
-        statusText.innerText = "Udało się! Liczba " + wpisanaLiczba + " zapisana.";
-        statusText.style.color = "green";
-        input.value = ''; // Czyszczenie pola po sukcesie
       }
     }
   </script>
