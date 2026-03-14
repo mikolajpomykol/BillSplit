@@ -1,44 +1,125 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+<style>
+    body {
+      background-color: #000000; /* Zmienia tło całej strony */
+      color: #008a90; /* Zmienia domyślny kolor tekstu na przyjemny, ciemnoszary */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; /* Usuwa domyślne, brzydkie marginesy przeglądarki */
+    }
+
+    input, select, button {
+      box-sizing: border-box; /* Magiczne zaklęcie: wlicza ramki do całkowitej wysokości */
+      height: 44px;           /* SZTYWNA WYSOKOŚĆ: Teraz każdy box będzie miał dokładnie 44 piksele */
+      border-radius: 16px;     /* ZAOKRĄGLENIA: Identyczne rogi dla wszystkich */
+      padding: 0 20px;        /* Odstęp tekstu od lewej/prawej krawędzi */
+      border: 0px solid #ffffff; /* Taka sama, delikatna ramka */
+      font-size: 16px;        /* Identyczna wielkość czcionki */
+      background-color: #ffffff; /* Ciemniejsze tło samych pól (zmień jeśli wolisz jasne) */
+      color: inherit;         /* Dziedziczy kolor tekstu z body */
+      outline: none;          /* Usuwa brzydką, domyślną obwódkę przy kliknięciu */
+      font-family: inherit; /* Każe im odziedziczyć ładną czcionkę z body */
+    }
+
+    button{
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #008a90;
+      color: #ffffff;
+    }
+
+    /* SPECJALNE ZASADY TYLKO DLA LISTY ROZWIJANEJ (<select>) */
+    select{
+      /* 1. Wyłączamy brzydki, systemowy styl przeglądarki */
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+
+      /* 3. Robimy trochę więcej miejsca po prawej stronie, żeby tekst nie wchodził na strzałkę */
+      padding-right: 40px;
+    }
+  </style>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moja Strona z Supabase</title>
+  <meta name="viewport"  content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="favicon2.png">
+  <title>BillSplit</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
 
-  <div style="padding: 20px; font-family: sans-serif;">
-    <h2>Wpisz swoją liczbę</h2>
+  <div style="padding: 20px; font-family: sans-serif; text-align: center">
+    <h2>Dodaj wydatek</h2>
     
-    <input type="number" step="any" id="liczbaInput" placeholder="np. 42" style="padding: 8px;">
-    <input type="char" id="payerInput" placeholder="Uzytkowik" style="padding: 38px;">
-    <button onclick="zapiszDoBazy()" style="padding: 8px 16px;">Zapisz</button>
+    <input type="number" step="any" id="liczbaInput">
+    <select type="string" id="payerInput">
+      <option value="">-- Ładowanie płatników... --</option>
+    </select>
+    <button onclick="zapiszDoBazy()">Zapisz</button>
     
     <p id="status"></p>
   </div>
 
   <script>
-    console.log("1. Ładowanie skryptu rozpoczęte.");
+    console.log("Ładowanie skryptu rozpoczęte.");
 
     const supabaseUrl = 'https://eabprmsyvgznqaxtahdr.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhYnBybXN5dmd6bnFheHRhaGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0ODA3NjQsImV4cCI6MjA4ODA1Njc2NH0.63M5d6ETIjfBlaB02-qf-kTzqjLq4JKCcW_rIdSoMww';
-    
-    // Zmieniliśmy nazwę zmiennej na supabaseClient, by unikać konfliktów!
     const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-    console.log("2. Supabase poprawnie zainicjalizowany.");
+    console.log("Supabase poprawnie zainicjalizowany.");
+
+    LoadPayers();
+
+    async function LoadPayers() {
+      const id = 'id'; // Supabase corelation
+      const user = 'User'; //Supabase corelation
+      const tablePayer = 'people'; //Supabase corelation
+
+      const payerList = document.getElementById('payerInput');
+
+      const { data, error } = await supabaseClient
+        .from(tablePayer)
+        .select('id, User')
+
+      if (error) {
+        console.error('Błąd pobierania płatników:', error);
+        payerList.innerHTML = '<option value="">Błąd ładowania listy</option>';
+        return;
+      }
+
+      // Czyścimy listę i ustawiamy tekst początkowy
+      payerList.innerHTML = '';
+
+      // Przechodzimy przez każdego pobranego płatnika i dodajemy go do listy
+      data.forEach(platnik => {
+        const nowaOpcja = document.createElement('option');
+        nowaOpcja.value = platnik.id;       // To poleci do bazy jako wartość
+        nowaOpcja.textContent = platnik.User; // To zobaczy użytkownik na ekranie
+        payerList.appendChild(nowaOpcja);
+      });
+  
+      console.log("Lista płatników załadowana pomyślnie!");
+      }
 
     async function zapiszDoBazy() {
       console.log("3. Kliknięto przycisk Zapisz.");
       
       const input = document.getElementById('liczbaInput');
+      const input2 = document.getElementById('payerInput')
       const statusText = document.getElementById('status');
       
-      const wpisanaLiczba = parseFloat(input.value.replace(',', '.'));
-      console.log("Wpisana liczba to:", wpisanaLiczba);
+      const wpisanaLiczbaKwota = parseFloat(input.value.replace(',', '.'));
+      const wpisanyPlatnik = parseFloat(input2.value);
+      console.log("Wpisana liczba to:", wpisanaLiczbaKwota);
 
-      if (isNaN(wpisanaLiczba)) {
+
+      // sprawdzanie poprawności wpisania wartości
+      if (isNaN(wpisanaLiczbaKwota)) {
         statusText.innerText = "Proszę wpisać poprawną liczbę!";
         statusText.style.color = "red";
         console.log("Przerwano: Wartość nie jest liczbą.");
@@ -50,6 +131,7 @@
 
       const SupaTable = 'expenses';
       const SupaColumn = 'ExpenseValue';
+      const SupaPayer = 'PayerID';
 
       try {
         console.log(`4. Próba wysłania danych do tabeli "${SupaTable}"...`);
@@ -58,8 +140,13 @@
         const { data, error } = await supabaseClient
           .from(SupaTable)
           .insert([
-            { [SupaColumn]: wpisanaLiczba }
+            {
+              [SupaColumn]: wpisanaLiczbaKwota ,
+              [SupaPayer]: wpisanyPlatnik
+
+            }
           ]);
+
 
         if (error) {
           console.error('5. Błąd Supabase:', error);
@@ -67,17 +154,19 @@
           statusText.style.color = "red";
         } else {
           console.log('5. Sukces! Odpowiedź bazy:', data);
-          statusText.innerText = "Udało się! Liczba " + wpisanaLiczba + " zapisana.";
+          statusText.innerText = "Udało się! Kwota " + wpisanaLiczbaKwota + " płatnika " + wpisanyPlatnik + " zapisana.";
           statusText.style.color = "green";
           input.value = ''; 
         }
-      } catch (e) {
-        // Ten blok wychwyci inne, krytyczne błędy skryptu
+      } 
+      catch (e) {
+        //Ten blok wychwyci inne, krytyczne błędy skryptu
         console.error('Krytyczny błąd działania funkcji:', e);
         statusText.innerText = "Krytyczny błąd! Sprawdź konsolę (F12).";
         statusText.style.color = "red";
       }
     }
+  
   </script>
 
 </body>
